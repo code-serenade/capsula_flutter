@@ -79,36 +79,12 @@ class HealthDataRecord {
 
   /// 获取类型显示名称
   String get typeDisplayName {
-    switch (type) {
-      case HealthDataType.bloodPressure:
-        return '血压';
-      case HealthDataType.bloodSugar:
-        return '血糖';
-      case HealthDataType.heartRate:
-        return '心率';
-      case HealthDataType.checkup:
-        return '体检报告';
-      case HealthDataType.medication:
-        return '用药记录';
-      case HealthDataType.other:
-        return '其他';
-    }
+    return type.displayName;
   }
 
   /// 获取来源显示名称
   String get sourceDisplayName {
-    switch (source) {
-      case DataSource.camera:
-        return '拍照';
-      case DataSource.upload:
-        return '文件上传';
-      case DataSource.manual:
-        return '手动输入';
-      case DataSource.device:
-        return '设备同步';
-      case DataSource.voice:
-        return '语音录入';
-    }
+    return source.displayName;
   }
 }
 
@@ -165,4 +141,40 @@ class DataCollectionMethod {
       source: DataSource.voice,
     ),
   ];
+}
+
+extension DataSourceDisplayName on DataSource {
+  String get displayName {
+    switch (this) {
+      case DataSource.camera:
+        return '拍照';
+      case DataSource.upload:
+        return '文件上传';
+      case DataSource.manual:
+        return '手动输入';
+      case DataSource.device:
+        return '设备同步';
+      case DataSource.voice:
+        return '语音录入';
+    }
+  }
+}
+
+extension HealthDataTypeDisplayName on HealthDataType {
+  String get displayName {
+    switch (this) {
+      case HealthDataType.bloodPressure:
+        return '血压';
+      case HealthDataType.bloodSugar:
+        return '血糖';
+      case HealthDataType.heartRate:
+        return '心率';
+      case HealthDataType.checkup:
+        return '体检报告';
+      case HealthDataType.medication:
+        return '用药记录';
+      case HealthDataType.other:
+        return '其他';
+    }
+  }
 }

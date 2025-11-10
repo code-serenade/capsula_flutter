@@ -1,0 +1,48 @@
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../models/health_asset.dart';
+import '../repositories/health_asset_repository.dart';
+import 'sandbox_provider.dart';
+
+part 'health_asset_provider.g.dart';
+
+@riverpod
+HealthAssetRepository healthAssetRepository(Ref ref) {
+  final sandbox = ref.watch(sandboxServiceProvider);
+  return HealthAssetRepository(sandboxService: sandbox);
+}
+
+@riverpod
+class HealthAssets extends _$HealthAssets {
+  @override
+  Future<List<HealthAsset>> build({String query = '', List<String> tags = const []}) async {
+    final repo = ref.watch(healthAssetRepositoryProvider);
+    return repo.fetchAssets(
+      keyword: query.isEmpty ? null : query,
+      tags: tags.isEmpty ? null : tags,
+    );
+  }
+
+  Future<void> refresh() async {
+    final repo = ref.read(healthAssetRepositoryProvider);
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => repo.fetchAssets(
+        keyword: query.isEmpty ? null : query,
+        tags: tags.isEmpty ? null : tags,
+      ),
+    );
+  }
+
+  Future<void> addManualAsset(HealthAssetDraft draft) async {
+    final repo = ref.read(healthAssetRepositoryProvider);
+    final newAsset = await repo.createManualEntry(draft);
+    state = state.whenData((value) => [newAsset, ...value]);
+  }
+
+  Future<void> deleteAsset(int id) async {
+    final repo = ref.read(healthAssetRepositoryProvider);
+    await repo.deleteAsset(id);
+    state = state.whenData((value) => value.where((asset) => asset.id != id).toList());
+  }
+}

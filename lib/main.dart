@@ -9,9 +9,15 @@ import 'l10n.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'routes/router.dart';
+import 'services/db/health_asset_database.dart';
+import 'services/storage/sandbox_service.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
+
+  await SandboxService.instance.initialize();
+  await HealthAssetDatabase.instance.initialize();
 
   // 打印系统主题信息
   final systemBrightness =

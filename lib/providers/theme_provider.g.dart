@@ -44,7 +44,7 @@ final class ThemeModeNotifierProvider
   }
 }
 
-String _$themeModeNotifierHash() => r'6f359004224aff18c09b299478514d9776eea7e9';
+String _$themeModeNotifierHash() => r'052f04454d07124de1fa9abcb1e210650b2ebf02';
 
 /// 主题模式状态管理 using Riverpod 3.0 Notifier pattern
 

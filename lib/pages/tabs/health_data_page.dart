@@ -1,105 +1,46 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
+
+import '../../models/health_asset.dart';
 import '../../models/health_data_model.dart';
-import '../../widgets/health_data/page_header.dart';
+import '../../providers/health_asset_provider.dart';
 import '../../widgets/health_data/data_collection_grid.dart';
+import '../../widgets/health_data/data_import_dialog.dart';
+import '../../widgets/health_data/health_data_card.dart';
+import '../../widgets/health_data/page_header.dart';
 import '../../widgets/health_data/quick_filters.dart';
 import '../../widgets/health_data/tag_filters.dart';
-import '../../widgets/health_data/health_data_card.dart';
-import '../../widgets/health_data/data_import_dialog.dart';
 
 @RoutePage()
-class HealthDataPage extends StatefulWidget {
+class HealthDataPage extends ConsumerStatefulWidget {
   const HealthDataPage({super.key});
 
   @override
-  State<HealthDataPage> createState() => _HealthDataPageState();
+  ConsumerState<HealthDataPage> createState() => _HealthDataPageState();
 }
 
-class _HealthDataPageState extends State<HealthDataPage> {
+class _HealthDataPageState extends ConsumerState<HealthDataPage> {
   String _selectedFilter = 'all';
-  String _selectedTag = 'all';
+  String _selectedTag = '全部标签';
+  String _searchKeyword = '';
   bool _isListView = true;
-
-  // 模拟数据
-  final List<HealthDataRecord> _mockData = [
-    HealthDataRecord(
-      id: '1',
-      type: HealthDataType.bloodPressure,
-      content: '收缩压: 120 mmHg\n舒张压: 80 mmHg',
-      dateTime: DateTime(2023, 6, 15, 8, 30),
-      source: DataSource.device,
-      tags: const [
-        HealthTag(id: '1', name: '血压'),
-        HealthTag(id: '2', name: '日常监测'),
-      ],
-      notes: '欧姆龙血压计',
-    ),
-    HealthDataRecord(
-      id: '2',
-      type: HealthDataType.bloodSugar,
-      content: '空腹血糖: 5.6 mmol/L',
-      dateTime: DateTime(2023, 6, 15, 7, 15),
-      source: DataSource.device,
-      tags: const [
-        HealthTag(id: '3', name: '血糖'),
-        HealthTag(id: '2', name: '日常监测'),
-      ],
-      notes: '三诺血糖仪',
-    ),
-    HealthDataRecord(
-      id: '3',
-      type: HealthDataType.checkup,
-      content: '年度体检报告（2023）',
-      dateTime: DateTime(2023, 5, 20, 10, 0),
-      source: DataSource.upload,
-      tags: const [
-        HealthTag(id: '4', name: '体检'),
-        HealthTag(id: '5', name: '年度'),
-      ],
-    ),
-    HealthDataRecord(
-      id: '4',
-      type: HealthDataType.heartRate,
-      content: '静息心率: 72 次/分',
-      dateTime: DateTime(2023, 6, 14, 22, 0),
-      source: DataSource.device,
-      tags: const [
-        HealthTag(id: '6', name: '心率'),
-        HealthTag(id: '7', name: '可穿戴设备'),
-      ],
-      notes: 'Apple Watch',
-    ),
-    HealthDataRecord(
-      id: '5',
-      type: HealthDataType.medication,
-      content: '药物: 阿司匹林\n剂量: 100mg',
-      dateTime: DateTime(2023, 6, 14, 19, 30),
-      source: DataSource.manual,
-      tags: const [
-        HealthTag(id: '8', name: '用药'),
-        HealthTag(id: '9', name: '日常用药'),
-      ],
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final assetState = ref.watch(healthAssetsProvider(query: _searchKeyword));
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // 页面标题
           const SliverToBoxAdapter(
             child: PageHeader(
               title: '我的健康数据',
               subtitle: '全方位记录和管理您的健康信息',
             ),
           ),
-
-          // 数据采集区
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -124,22 +65,12 @@ class _HealthDataPageState extends State<HealthDataPage> {
                   ),
                   const SizedBox(height: 16),
                   DataCollectionGrid(
-                    onMethodTap: (method) {
-                      DataImportDialog.show(
-                        context,
-                        method: method,
-                        onSave: () {
-                          // TODO: 保存数据
-                        },
-                      );
-                    },
+                    onMethodTap: (method) => _showImportDialog(method: method),
                   ),
                 ],
               ),
             ),
           ),
-
-          // 数据管理区
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -169,9 +100,7 @@ class _HealthDataPageState extends State<HealthDataPage> {
                         children: [
                           IconButton(
                             icon: const Icon(Iconsax.search_normal),
-                            onPressed: () {
-                              // TODO: 实现搜索功能
-                            },
+                            onPressed: _showSearchDialog,
                           ),
                           IconButton(
                             icon: Icon(
@@ -191,67 +120,292 @@ class _HealthDataPageState extends State<HealthDataPage> {
                   QuickFilters(
                     selectedFilter: _selectedFilter,
                     onFilterSelected: (filter) {
-                      setState(() {
-                        _selectedFilter = filter;
-                      });
+                      setState(() => _selectedFilter = filter);
                     },
                   ),
                   const SizedBox(height: 16),
                   TagFilters(
                     selectedTag: _selectedTag,
                     onTagSelected: (tag) {
-                      setState(() {
-                        _selectedTag = tag;
-                      });
+                      setState(() => _selectedTag = tag);
                     },
                   ),
                 ],
               ),
             ),
           ),
-
-          // 数据列表
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final record = _mockData[index];
-                  return HealthDataCard(
-                    record: record,
-                    onTap: () {
-                      // TODO: 查看详情
-                    },
-                    onEdit: () {
-                      // TODO: 编辑
-                    },
-                    onView: () {
-                      // TODO: 查看
-                    },
-                  );
-                },
-                childCount: _mockData.length,
-              ),
-            ),
-          ),
-
-          // 底部间距
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 80),
-          ),
+          _buildAssetSliver(assetState),
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          DataImportDialog.show(
-            context,
-            onSave: () {
-              // TODO: 保存数据
-            },
-          );
-        },
+        onPressed: _showImportDialog,
         icon: const Icon(Iconsax.add),
         label: const Text('添加数据'),
+      ),
+    );
+  }
+
+  Widget _buildAssetSliver(AsyncValue<List<HealthAsset>> state) {
+    return state.when(
+      data: (assets) {
+        final filteredAssets = _applyFilters(assets);
+        if (filteredAssets.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: _EmptyHealthDataState(),
+          );
+        }
+        final entries = filteredAssets
+            .map(
+              (asset) => (asset: asset, record: asset.toRecord()),
+            )
+            .toList();
+
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final entry = entries[index];
+                return HealthDataCard(
+                  record: entry.record,
+                  onTap: () => _showAssetDetails(entry.asset),
+                  onView: () => _showAssetDetails(entry.asset),
+                );
+              },
+              childCount: entries.length,
+            ),
+          ),
+        );
+      },
+      loading: () => const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => SliverFillRemaining(
+        hasScrollBody: false,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Iconsax.warning_2, size: 32),
+            const SizedBox(height: 12),
+            const Text('数据加载失败'),
+            const SizedBox(height: 8),
+            Text('$error', textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => ref
+                  .read(healthAssetsProvider(query: _searchKeyword).notifier)
+                  .refresh(),
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<HealthAsset> _applyFilters(List<HealthAsset> assets) {
+    Iterable<HealthAsset> filtered = assets;
+    final now = DateTime.now();
+    switch (_selectedFilter) {
+      case '7days':
+        filtered = filtered.where(
+          (asset) => asset.createdAt.isAfter(now.subtract(const Duration(days: 7))),
+        );
+        break;
+      case 'checkup':
+        filtered = filtered.where((asset) => asset.dataType == HealthDataType.checkup);
+        break;
+      case 'bp':
+        filtered = filtered.where((asset) => asset.dataType == HealthDataType.bloodPressure);
+        break;
+      case 'bs':
+        filtered = filtered.where((asset) => asset.dataType == HealthDataType.bloodSugar);
+        break;
+      case 'device':
+        filtered = filtered.where((asset) => asset.dataSource == DataSource.device);
+        break;
+      default:
+        break;
+    }
+
+    if (_selectedTag != '全部标签') {
+      filtered = filtered.where((asset) => asset.tags.contains(_selectedTag));
+    }
+
+    return filtered.toList();
+  }
+
+  void _showImportDialog({DataCollectionMethod? method}) {
+    DataImportDialog.show(
+      context,
+      method: method,
+      onSubmit: (draft) async {
+        try {
+          await ref
+              .read(healthAssetsProvider(query: _searchKeyword).notifier)
+              .addManualAsset(draft);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('健康数据已保存到本地沙盒')),
+            );
+          }
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('保存失败: $error')),
+            );
+          }
+          rethrow;
+        }
+      },
+    );
+  }
+
+  Future<void> _showSearchDialog() async {
+    final controller = TextEditingController(text: _searchKeyword);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('搜索健康数据'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: '输入关键字'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _searchKeyword = result;
+      });
+    }
+  }
+
+  void _showAssetDetails(HealthAsset asset) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                asset.filename,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              _DetailRow(label: '来源', value: asset.dataSource.displayName),
+              _DetailRow(label: '类型', value: asset.dataType.displayName),
+              _DetailRow(label: '更新时间', value: _formatDateTime(asset.updatedAt)),
+              _DetailRow(label: '文件路径', value: asset.path),
+              if (asset.tags.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  children: asset.tags
+                      .map((tag) => Chip(
+                            label: Text(tag),
+                            backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                          ))
+                      .toList(),
+                ),
+              ],
+              if (asset.note?.isNotEmpty == true) ...[
+                const SizedBox(height: 12),
+                Text(
+                  asset.note!,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatDateTime(DateTime value) {
+    final date = '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+    final time = '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+    return '$date $time';
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyHealthDataState extends StatelessWidget {
+  const _EmptyHealthDataState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Iconsax.document, size: 48, color: theme.colorScheme.primary),
+          const SizedBox(height: 12),
+          const Text('还没有健康数据'),
+          const SizedBox(height: 8),
+          Text(
+            '通过上方的采集方式添加第一条记录吧',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
