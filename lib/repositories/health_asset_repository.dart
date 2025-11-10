@@ -5,21 +5,37 @@ import 'package:path/path.dart' as p;
 
 import '../models/health_asset.dart';
 import '../models/health_data_model.dart';
-import '../services/db/health_asset_database.dart';
+import '../services/db/app_database.dart';
+import '../services/db/tables/health_asset/health_asset_table.dart';
 import '../services/storage/sandbox_service.dart';
 
 class HealthAssetRepository {
   HealthAssetRepository({
-    HealthAssetDatabase? database,
+    HealthAssetDao? dao,
+    AppDatabase? database,
     SandboxService? sandboxService,
-  })  : _database = database ?? HealthAssetDatabase.instance,
+  })  : _dao = dao,
+        _database = database,
         _sandboxService = sandboxService ?? SandboxService.instance;
 
-  final HealthAssetDatabase _database;
+  HealthAssetDao? _dao;
+  final AppDatabase? _database;
   final SandboxService _sandboxService;
 
-  Future<List<HealthAsset>> fetchAssets({String? keyword, List<String>? tags}) {
-    return _database.fetchAssets(keyword: keyword, tags: tags);
+  Future<HealthAssetDao> _requireDao() async {
+    final existing = _dao;
+    if (existing != null) {
+      return existing;
+    }
+    final db = _database ?? await AppDatabase.ensureInstance();
+    final dao = HealthAssetDao(db);
+    _dao = dao;
+    return dao;
+  }
+
+  Future<List<HealthAsset>> fetchAssets({String? keyword, List<String>? tags}) async {
+    final dao = await _requireDao();
+    return dao.fetchAssets(keyword: keyword, tags: tags);
   }
 
   Future<HealthAsset> createManualEntry(HealthAssetDraft draft) async {
@@ -70,7 +86,8 @@ class HealthAssetRepository {
       updatedAt: now,
     );
 
-    final id = await _database.insertAsset(asset);
+    final dao = await _requireDao();
+    final id = await dao.insertAsset(asset);
     return asset.copyWith(id: id);
   }
 
@@ -115,12 +132,14 @@ class HealthAssetRepository {
       updatedAt: now,
     );
 
-    final id = await _database.insertAsset(asset);
+    final dao = await _requireDao();
+    final id = await dao.insertAsset(asset);
     return asset.copyWith(id: id);
   }
 
-  Future<void> deleteAsset(int id) {
-    return _database.deleteAsset(id);
+  Future<void> deleteAsset(int id) async {
+    final dao = await _requireDao();
+    await dao.deleteAsset(id);
   }
 
   String _sanitizeFileName(String value) {

@@ -9,7 +9,7 @@ import 'l10n.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'routes/router.dart';
-import 'services/db/health_asset_database.dart';
+import 'services/db/app_database.dart';
 import 'services/storage/sandbox_service.dart';
 
 void main() async {
@@ -17,7 +17,7 @@ void main() async {
   await dotenv.load(fileName: "assets/.env");
 
   await SandboxService.instance.initialize();
-  await HealthAssetDatabase.instance.initialize();
+  await AppDatabase.ensureInstance();
 
   // 打印系统主题信息
   final systemBrightness =
