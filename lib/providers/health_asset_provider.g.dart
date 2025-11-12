@@ -98,7 +98,7 @@ final class HealthAssetsProvider
   }
 }
 
-String _$healthAssetsHash() => r'e00a07189073163ac19056272f8acb02f411a675';
+String _$healthAssetsHash() => r'6cf0fc951986643de07b9218f727eb703aa2762b';
 
 final class HealthAssetsFamily extends $Family
     with
