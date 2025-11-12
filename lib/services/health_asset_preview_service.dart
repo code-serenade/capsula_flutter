@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../models/health_asset.dart';
-import '../providers/sandbox_provider.dart';
+import '../providers/sandbox/sandbox_provider.dart';
 import '../utils/file_viewer.dart';
 import '../widgets/health_data/unsupported_file_view.dart';
 

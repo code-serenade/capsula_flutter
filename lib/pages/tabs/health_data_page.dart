@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 
-import '../../providers/health_asset_provider.dart';
-import '../../providers/health_data_view_provider.dart';
+import '../../providers/health_asset/health_asset_provider.dart';
+import '../../providers/health_data_view/health_data_view_provider.dart';
 import '../../services/health_data_actions.dart';
 import '../../widgets/health_data/health_data_asset_list.dart';
 import '../../widgets/health_data/health_data_collection_section.dart';

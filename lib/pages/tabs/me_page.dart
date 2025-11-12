@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 import '../../l10n.dart';
-import '../../providers/locale_provider.dart';
-import '../../providers/theme_provider.dart';
+import '../../providers/locale/locale_provider.dart';
+import '../../providers/theme/theme_provider.dart';
 
 @RoutePage()
 class MePage extends ConsumerWidget {

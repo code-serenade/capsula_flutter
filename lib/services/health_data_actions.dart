@@ -5,8 +5,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../models/health_asset.dart';
 import '../models/health_data_model.dart';
-import '../providers/health_asset_provider.dart';
-import '../providers/health_data_view_provider.dart';
+import '../providers/health_asset/health_asset_provider.dart';
+import '../providers/health_data_view/health_data_view_provider.dart';
 import '../services/health_asset_preview_service.dart';
 import '../widgets/health_data/health_asset_detail_sheet.dart';
 import '../widgets/health_data/data_import_dialog.dart';

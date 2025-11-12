@@ -1,6 +1,6 @@
 import '../models/health_asset.dart';
 import '../models/health_data_model.dart';
-import '../providers/health_data_view_provider.dart';
+import '../providers/health_data_view/health_data_view_provider.dart';
 
 List<HealthAsset> applyHealthDataFilters(
   List<HealthAsset> assets,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../models/health_asset.dart';
-import '../../providers/health_data_view_provider.dart';
+import '../../providers/health_data_view/health_data_view_provider.dart';
 import '../../services/health_asset_filter_service.dart';
 import '../../widgets/health_data/empty_health_data_state.dart';
 import 'health_data_card.dart';

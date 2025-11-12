@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
-import '../providers/theme_provider.dart';
+import '../providers/theme/theme_provider.dart';
 
 /// 主题切换器组件 - 用于调试和手动切换主题
 class ThemeSwitcher extends ConsumerWidget {

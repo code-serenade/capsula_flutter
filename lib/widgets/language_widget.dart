@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../l10n.dart';
-import '../providers/locale_provider.dart';
+import '../providers/locale/locale_provider.dart';
 
 class LanguagePickerWidget extends ConsumerWidget {
   const LanguagePickerWidget({super.key});

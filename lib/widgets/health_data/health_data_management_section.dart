@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
-import '../../providers/health_data_view_provider.dart';
+import '../../providers/health_data_view/health_data_view_provider.dart';
 import 'quick_filters.dart';
 import 'tag_filters.dart';
 
