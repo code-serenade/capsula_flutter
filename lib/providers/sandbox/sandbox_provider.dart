@@ -1,6 +1,6 @@
+import 'package:capsula_flutter/services/storage/sandbox_service_stub.dart';
+import 'package:capsula_flutter/services/storage/sandbox_service_types.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../services/storage/sandbox_service.dart';
 
 part 'sandbox_provider.g.dart';
 

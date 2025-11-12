@@ -1,13 +1,12 @@
 import 'dart:io';
 
+import 'package:capsula_flutter/models/health_asset.dart';
+import 'package:capsula_flutter/models/health_data_model.dart';
+import 'package:capsula_flutter/services/db/app_database.dart';
+import 'package:capsula_flutter/services/db/tables/health_asset/health_asset_table.dart';
+import 'package:capsula_flutter/services/storage/sandbox_service_stub.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
-
-import '../models/health_asset.dart';
-import '../models/health_data_model.dart';
-import '../services/db/app_database.dart';
-import '../services/db/tables/health_asset/health_asset_table.dart';
-import '../services/storage/sandbox_service.dart';
 
 class HealthAssetRepository {
   HealthAssetRepository({
@@ -50,7 +49,7 @@ class HealthAssetRepository {
     final relativeDir = p.join('files', 'doc', 'manual');
     final sanitizedTitle = _sanitizeFileName(draft.title);
     final fileBaseName = sanitizedTitle.isEmpty ? 'note' : sanitizedTitle;
-    final fileName = '${_formatTimestamp(now)}_${fileBaseName}.txt';
+    final fileName = '${_formatTimestamp(now)}_$fileBaseName.txt';
     final buffer = StringBuffer()
       ..writeln('# ${draft.title}')
       ..writeln('Created: ${now.toIso8601String()}')

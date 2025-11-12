@@ -1,6 +1,6 @@
 import 'dart:ui';
+import 'package:capsula_flutter/l10n.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../l10n.dart';
 
 part 'locale_provider.g.dart';
 

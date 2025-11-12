@@ -1,10 +1,9 @@
 import 'dart:io';
 
+import 'package:capsula_flutter/models/health_asset.dart';
+import 'package:capsula_flutter/providers/sandbox/sandbox_provider.dart';
+import 'package:capsula_flutter/repositories/health_asset_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../models/health_asset.dart';
-import '../repositories/health_asset_repository.dart';
-import 'sandbox_provider.dart';
 
 part 'health_asset_provider.g.dart';
 
