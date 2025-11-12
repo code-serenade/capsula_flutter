@@ -1,54 +1,76 @@
-# Flame Game
+# Capsula Flutter Client
 
-A new Flutter project using Flame.
+[中文文档](README_zh.md)
 
-## Getting Started
+Flutter + Riverpod implementation of the Capsula health dashboard. It manages health assets (manual notes, uploads, device sync data) inside an isolated sandbox, exposes them through AutoRoute tabs, and relies on Drift for local persistence.
 
-Follow these steps to set up and run the project:
+## Prerequisites
 
-1. Install the required dependencies:
+- Flutter 3.19+ (Dart 3.9 SDK)
+- macOS or Linux workstation (iOS builds require Xcode)
+- `fluttergen` and `build_runner` accessible via `dart run`
 
-   ```bash
-   flutter pub get
-   ```
+## Quick Start
 
-2. Generate l10n:
+```bash
+git clone <repo>
+cd capsula_flutter
+cp assets/example.env assets/.env   # configure API endpoints
+flutter pub get
+flutter gen-l10n
+fluttergen -c pubspec.yaml
+dart run build_runner build --delete-conflicting-outputs
+```
 
-   ```bash
-   flutter gen-l10n
-   ```
+### Common Commands
 
-3. Generate pubspec
+| Purpose | Command |
+| --- | --- |
+| Install dependencies | `flutter pub get` |
+| Generate localization files | `flutter gen-l10n` |
+| Regenerate asset bindings (`flutter_gen`) | `fluttergen -c pubspec.yaml` |
+| Run code generation (Riverpod/AutoRoute/json models) | `dart run build_runner build --delete-conflicting-outputs` |
+| Watch for changes during development | `dart run build_runner watch --delete-conflicting-outputs` |
 
-   ```bash
-   fluttergen -c pubspec.yaml
-   ```
+## Running
 
-4. Watch for changes and automatically rebuild:
+- **iOS / macOS / Android**: `flutter run -d <deviceId>`
+- **Web**: Not supported (Drift storage is disabled in web builds and will throw).
 
-   ```bash
-   flutter pub run build_runner watch
-   ```
+## Testing & Checks
+
+```bash
+flutter analyze
+flutter test
+```
+
+Unit/widget tests currently cover theming plus health-data providers and filters. Add new specs next to the feature they validate.
 
 ## Project Structure
 
-- `lib/`: Contains the main application code.
-- `protos/`: Contains the protocol buffer definitions.
+- `lib/main.dart`: App bootstrap (env loading, sandbox + DB init, Router setup).
+- `lib/providers/`: Riverpod Notifiers + generated code.
+- `lib/services/`: HTTP clients, sandbox helpers, Drift setup, health-data controllers.
+- `lib/pages/`: AutoRoute pages (auth, tabs, layouts).
+- `lib/widgets/health_data/`: Reusable widgets (collection grid, filters, cards, dialogs).
+- `lib/theme/`: Theme data, sub-theme definitions, health-data color helpers.
+- `assets/`: Localization ARB files, env template, static assets.
 
 ## Local Sandbox Architecture
 
-The app now provisions an `AppSandbox` directory using `SandboxService` on startup. It mirrors the design in `flutter前端设计.md`:
+`SandboxService` provisions an `AppSandbox` directory per platform:
 
-- `db/app_data.db`: primary SQLite database for all business data.
-- `files/`: user-generated content, split into `images/`, `audio/`, and `doc/` (with `pdf/`, `word/`, `excel/`, and `manual/`).
-- `config/settings.json`: local preferences (language, theme, etc.).
-- `secure/key_store/`: reserved for secrets and encryption material.
+- `db/app_data.db`: Drift/SQLite store for business data.
+- `files/`: user-generated content
+  - `images/`, `audio/`, `doc/{pdf,word,excel,manual}`
+- `config/settings.json`: cached preferences (language, theme, etc.).
+- `secure/key_store/`: reserved for secrets and encryption keys.
 
-All helper methods (text exports, file moves) resolve to sandbox-relative paths, so nothing escapes the app's container.
+All repository helpers resolve sandbox-relative paths, ensuring nothing leaves the container.
 
 ## Health Asset Storage
 
-Manual data imports and file uploads are persisted to the `health_asset` table in `app_data.db`:
+Health assets are persisted in the `health_asset` table:
 
 | Column | Description |
 | --- | --- |
@@ -57,24 +79,22 @@ Manual data imports and file uploads are persisted to the `health_asset` table i
 | `path` | Relative sandbox path |
 | `mime` | MIME type (image/png, text/plain, etc.) |
 | `size_bytes` | File size for quick validation |
-| `hash_sha256` | File hash for dedupe/integrity |
-| `data_source` | camera/upload/manual/device/voice |
-| `data_type` | bloodPressure, checkup, other... |
+| `hash_sha256` | Hash for dedupe/integrity |
+| `data_source` | camera / upload / manual / device / voice |
+| `data_type` | bloodPressure, checkup, etc. |
 | `note` | User memo/description |
-| `tags` | Comma-separated tags for querying |
-| `metadata_json` | Extra JSON payload (recordedAt, method, paths) |
+| `tags` | Comma-separated tags |
+| `metadata_json` | Additional payload (recordedAt, method, etc.) |
 | `created_at` / `updated_at` | ISO timestamps |
 
-`HealthAssetRepository` handles writing note files into `files/doc/manual`, copying uploads into the proper sub-folder, hashing, and syncing Riverpod state (`healthAssetsProvider`). The Health Data page now reads from this table instead of mock data, supports filtering/searching, and exposes a richer manual-import dialog.
+`HealthAssetRepository` writes manual notes into `files/doc/manual`, moves uploads into the correct subtree, hashes content, and notifies `healthAssetsProvider`. UI clients (Health Data tab) bind to this state for filtering, search, detail dialogs, and OS-level previews.
 
-## Running the App
+## Troubleshooting
 
-To run the app on an emulator or a physical device, use the following command:
-
-```bash
-flutter run
-```
+- **`flutter analyze` / `flutter test` fails in Codex CLI**: run commands locally; Flutter must write `bin/cache`.
+- **Files fail to open on desktop**: ensure `SandboxService` initialized by launching via `flutter run` and verify sandbox paths in dev tools.
+- **Missing localization or assets**: rerun `flutter gen-l10n` and `fluttergen -c pubspec.yaml`.
 
 ## License
 
-This project is licensed under the MIT License
+MIT License.
