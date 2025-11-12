@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:iconsax/iconsax.dart';
 
-import '../../providers/health_asset/health_asset_provider.dart';
-import '../../providers/health_data_view/health_data_view_provider.dart';
-import '../../services/health_data_actions.dart';
-import '../../widgets/health_data/health_data_asset_list.dart';
-import '../../widgets/health_data/health_data_collection_section.dart';
-import '../../widgets/health_data/health_data_management_section.dart';
-import '../../widgets/health_data/page_header.dart';
+import 'package:capsula_flutter/providers/health_asset/health_asset_provider.dart';
+import 'package:capsula_flutter/providers/health_data_view/health_data_view_provider.dart';
+import 'package:capsula_flutter/services/health_data/detail_controller.dart';
+import 'package:capsula_flutter/services/health_data/import_controller.dart';
+import 'package:capsula_flutter/services/health_data/search_controller.dart';
+import 'package:capsula_flutter/widgets/health_data/health_data_asset_list.dart';
+import 'package:capsula_flutter/widgets/health_data/health_data_collection_section.dart';
+import 'package:capsula_flutter/widgets/health_data/health_data_management_section.dart';
+import 'package:capsula_flutter/widgets/health_data/page_header.dart';
 
 @RoutePage()
 class HealthDataPage extends ConsumerWidget {
@@ -18,22 +20,23 @@ class HealthDataPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewState = ref.watch(healthDataViewProvider);
-    final assetsState =
-        ref.watch(healthAssetsProvider(query: viewState.searchKeyword));
-    final actions = HealthDataActions(context: context, ref: ref);
+    final assetsState = ref.watch(
+      healthAssetsProvider(query: viewState.searchKeyword),
+    );
+    final importController = ref.read(healthDataImportControllerProvider);
+    final searchController = ref.read(healthDataSearchControllerProvider);
+    final detailController = ref.read(healthAssetDetailControllerProvider);
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(
-            child: PageHeader(
-              title: '我的健康数据',
-              subtitle: '全方位记录和管理您的健康信息',
-            ),
+            child: PageHeader(title: '我的健康数据', subtitle: '全方位记录和管理您的健康信息'),
           ),
           SliverToBoxAdapter(
             child: HealthDataCollectionSection(
-              onMethodTap: (method) => actions.startImport(method: method),
+              onMethodTap: (method) =>
+                  importController.startImport(context, method: method),
             ),
           ),
           SliverToBoxAdapter(
@@ -44,17 +47,18 @@ class HealthDataPage extends ConsumerWidget {
                   .selectFilter(filter),
               onTagSelected: (tag) =>
                   ref.read(healthDataViewProvider.notifier).selectTag(tag),
-              onSearchTap: actions.startSearch,
-              onToggleView: () => ref
-                  .read(healthDataViewProvider.notifier)
-                  .toggleViewMode(),
+              onSearchTap: () => searchController.startSearch(context),
+              onToggleView: () =>
+                  ref.read(healthDataViewProvider.notifier).toggleViewMode(),
             ),
           ),
           HealthDataAssetList(
             assets: assetsState,
             viewState: viewState,
-            onShowDetails: actions.showAssetDetails,
-            onPreview: actions.previewAsset,
+            onShowDetails: (asset) =>
+                detailController.showDetails(context, asset),
+            onPreview: (asset) =>
+                detailController.previewAsset(context, asset),
             onRetry: () => ref
                 .read(
                   healthAssetsProvider(query: viewState.searchKeyword).notifier,
@@ -65,7 +69,7 @@ class HealthDataPage extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => actions.startImport(),
+        onPressed: () => importController.startImport(context),
         icon: const Icon(Iconsax.add),
         label: const Text('添加数据'),
       ),
