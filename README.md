@@ -24,13 +24,13 @@ dart run build_runner build --delete-conflicting-outputs
 
 ### Common Commands
 
-| Purpose | Command |
-| --- | --- |
-| Install dependencies | `flutter pub get` |
-| Generate localization files | `flutter gen-l10n` |
-| Regenerate asset bindings (`flutter_gen`) | `fluttergen -c pubspec.yaml` |
+| Purpose                                              | Command                                                    |
+| ---------------------------------------------------- | ---------------------------------------------------------- |
+| Install dependencies                                 | `flutter pub get`                                          |
+| Generate localization files                          | `flutter gen-l10n`                                         |
+| Regenerate asset bindings (`flutter_gen`)            | `fluttergen -c pubspec.yaml`                               |
 | Run code generation (Riverpod/AutoRoute/json models) | `dart run build_runner build --delete-conflicting-outputs` |
-| Watch for changes during development | `dart run build_runner watch --delete-conflicting-outputs` |
+| Watch for changes during development                 | `dart run build_runner watch --delete-conflicting-outputs` |
 
 ## Running
 
@@ -72,26 +72,25 @@ All repository helpers resolve sandbox-relative paths, ensuring nothing leaves t
 
 Health assets are persisted in the `health_asset` table:
 
-| Column | Description |
-| --- | --- |
-| `id` | Auto-increment primary key |
-| `filename` | Original or user-provided name |
-| `path` | Relative sandbox path |
-| `mime` | MIME type (image/png, text/plain, etc.) |
-| `size_bytes` | File size for quick validation |
-| `hash_sha256` | Hash for dedupe/integrity |
-| `data_source` | camera / upload / manual / device / voice |
-| `data_type` | bloodPressure, checkup, etc. |
-| `note` | User memo/description |
-| `tags` | Comma-separated tags |
-| `metadata_json` | Additional payload (recordedAt, method, etc.) |
-| `created_at` / `updated_at` | ISO timestamps |
+| Column                      | Description                                   |
+| --------------------------- | --------------------------------------------- |
+| `id`                        | Auto-increment primary key                    |
+| `filename`                  | Original or user-provided name                |
+| `path`                      | Relative sandbox path                         |
+| `mime`                      | MIME type (image/png, text/plain, etc.)       |
+| `size_bytes`                | File size for quick validation                |
+| `hash_sha256`               | Hash for dedupe/integrity                     |
+| `data_source`               | camera / upload / manual / device / voice     |
+| `data_type`                 | bloodPressure, checkup, etc.                  |
+| `note`                      | User memo/description                         |
+| `tags`                      | Comma-separated tags                          |
+| `metadata_json`             | Additional payload (recordedAt, method, etc.) |
+| `created_at` / `updated_at` | ISO timestamps                                |
 
 `HealthAssetRepository` writes manual notes into `files/doc/manual`, moves uploads into the correct subtree, hashes content, and notifies `healthAssetsProvider`. UI clients (Health Data tab) bind to this state for filtering, search, detail dialogs, and OS-level previews.
 
 ## Troubleshooting
 
-- **`flutter analyze` / `flutter test` fails in Codex CLI**: run commands locally; Flutter must write `bin/cache`.
 - **Files fail to open on desktop**: ensure `SandboxService` initialized by launching via `flutter run` and verify sandbox paths in dev tools.
 - **Missing localization or assets**: rerun `flutter gen-l10n` and `fluttergen -c pubspec.yaml`.
 

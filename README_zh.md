@@ -24,13 +24,13 @@ dart run build_runner build --delete-conflicting-outputs
 
 ### 常用命令
 
-| 目的 | 命令 |
-| --- | --- |
-| 安装依赖 | `flutter pub get` |
-| 生成多语言文件 | `flutter gen-l10n` |
-| 重新生成 asset 绑定 (`flutter_gen`) | `fluttergen -c pubspec.yaml` |
+| 目的                                    | 命令                                                       |
+| --------------------------------------- | ---------------------------------------------------------- |
+| 安装依赖                                | `flutter pub get`                                          |
+| 生成多语言文件                          | `flutter gen-l10n`                                         |
+| 重新生成 asset 绑定 (`flutter_gen`)     | `fluttergen -c pubspec.yaml`                               |
 | 运行代码生成（Riverpod/AutoRoute/json） | `dart run build_runner build --delete-conflicting-outputs` |
-| 开发时监听文件变化 | `dart run build_runner watch --delete-conflicting-outputs` |
+| 开发时监听文件变化                      | `dart run build_runner watch --delete-conflicting-outputs` |
 
 ## 运行方式
 
@@ -72,26 +72,25 @@ flutter test
 
 所有健康资产写入 `health_asset` 表：
 
-| 列名 | 说明 |
-| --- | --- |
-| `id` | 自增主键 |
-| `filename` | 原始或用户输入的文件名 |
-| `path` | 沙盒内相对路径 |
-| `mime` | MIME 类型 |
-| `size_bytes` | 文件大小 |
-| `hash_sha256` | 哈希值（去重/校验） |
-| `data_source` | 数据来源（camera/upload/manual/device/voice） |
-| `data_type` | 数据类型（bloodPressure、checkup 等） |
-| `note` | 备注 |
-| `tags` | 逗号分隔标签 |
-| `metadata_json` | 额外 JSON 信息 |
-| `created_at` / `updated_at` | ISO 时间戳 |
+| 列名                        | 说明                                          |
+| --------------------------- | --------------------------------------------- |
+| `id`                        | 自增主键                                      |
+| `filename`                  | 原始或用户输入的文件名                        |
+| `path`                      | 沙盒内相对路径                                |
+| `mime`                      | MIME 类型                                     |
+| `size_bytes`                | 文件大小                                      |
+| `hash_sha256`               | 哈希值（去重/校验）                           |
+| `data_source`               | 数据来源（camera/upload/manual/device/voice） |
+| `data_type`                 | 数据类型（bloodPressure、checkup 等）         |
+| `note`                      | 备注                                          |
+| `tags`                      | 逗号分隔标签                                  |
+| `metadata_json`             | 额外 JSON 信息                                |
+| `created_at` / `updated_at` | ISO 时间戳                                    |
 
 `HealthAssetRepository` 负责生成文档、移动文件、计算哈希，并同步 Riverpod 状态 (`healthAssetsProvider`)。Health Data 页面通过过滤/搜索/详情弹窗来展示这些记录。
 
 ## 常见问题
 
-- **在 Codex CLI 中运行 `flutter analyze` / `flutter test` 报权限错误**：请在本地终端执行，Flutter 需要写 `bin/cache`。
 - **桌面端无法预览文件**：确保通过 `flutter run` 启动过应用，`SandboxService` 会在此阶段创建沙盒。
 - **找不到多语言或资源**：重新运行 `flutter gen-l10n` 与 `fluttergen -c pubspec.yaml`。
 
