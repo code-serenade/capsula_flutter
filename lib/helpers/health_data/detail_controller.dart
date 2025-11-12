@@ -1,8 +1,9 @@
+import 'package:capsula_flutter/helpers/health_asset/health_asset_preview_service.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'package:capsula_flutter/models/health_asset.dart';
-import 'package:capsula_flutter/services/health_asset_preview_service.dart';
+
 import 'package:capsula_flutter/widgets/health_data/health_asset_detail_sheet.dart';
 
 final healthAssetDetailControllerProvider = Provider(

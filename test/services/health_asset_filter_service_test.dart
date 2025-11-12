@@ -1,7 +1,7 @@
 import 'package:capsula_flutter/models/health_asset.dart';
 import 'package:capsula_flutter/models/health_data_model.dart';
 import 'package:capsula_flutter/providers/health_data_view/health_data_view_provider.dart';
-import 'package:capsula_flutter/services/health_asset_filter_service.dart';
+import 'package:capsula_flutter/helpers/health_asset/health_asset_filter_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -63,7 +63,10 @@ void main() {
       final result = applyHealthDataFilters(assets, state);
 
       expect(result, hasLength(2));
-      expect(result.map((a) => a.filename), containsAll(['bp_recent.pdf', 'blood_sugar.txt']));
+      expect(
+        result.map((a) => a.filename),
+        containsAll(['bp_recent.pdf', 'blood_sugar.txt']),
+      );
     });
   });
 }
