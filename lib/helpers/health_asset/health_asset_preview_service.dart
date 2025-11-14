@@ -6,7 +6,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:capsula_flutter/models/health_asset.dart';
 import 'package:capsula_flutter/providers/sandbox/sandbox_provider.dart';
 import 'package:capsula_flutter/utils/file_viewer.dart';
-import 'package:capsula_flutter/widgets/health_data/unsupported_file_view.dart';
 
 final healthAssetPreviewServiceProvider = Provider<HealthAssetPreviewService>(
   (ref) => HealthAssetPreviewService(ref: ref),
@@ -59,33 +58,16 @@ class HealthAssetPreviewService {
         return;
       }
 
+      // 直接使用系统默认应用打开文件，不显示 Dialog
+      final success = await FileViewerUtils.openFile(file.path);
+
       if (!context.mounted) return;
-      await showDialog(
-        context: context,
-        barrierDismissible: true,
-        builder: (context) {
-          final size = MediaQuery.of(context).size;
-          return Dialog(
-            insetPadding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: size.width * 0.9,
-              height: size.height * 0.8,
-              child: FileViewerUtils.viewer(
-                filePath: file.path,
-                onOpen: (success) {
-                  if (!success && context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('文件预览失败')));
-                  }
-                },
-                loadingWidget: const Center(child: CircularProgressIndicator()),
-                unsupportedWidget: UnsupportedFileView(path: file.path),
-              ),
-            ),
-          );
-        },
-      );
+      if (!success) {
+        // 只在失败时显示提示
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('无法打开文件，请确保已安装相应的应用')));
+      }
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(

@@ -382,14 +382,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-  flutter_filereader:
-    dependency: "direct main"
-    description:
-      name: flutter_filereader
-      sha256: "5db9dee7576706a64c6d444e89e8873e078284551e10440a5903575017601b5b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
   flutter_hooks:
     dependency: "direct main"
     description:
@@ -653,6 +645,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.2"
+  open_filex:
+    dependency: "direct main"
+    description:
+      name: open_filex
+      sha256: "9976da61b6a72302cf3b1efbce259200cd40232643a467aac7370addf94d6900"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.7.0"
   package_config:
     dependency: transitive
     description:

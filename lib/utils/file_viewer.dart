@@ -1,29 +1,117 @@
-import 'package:flutter/widgets.dart';
-import 'package:flutter_filereader/flutter_filereader.dart';
+import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 
 /// Supported document categories for the universal file reader.
 enum DocumentKind { pdf, word, excel, ppt, text, image, other }
 
-/// Utilities for previewing files with the `flutter_filereader` plugin.
+/// Utilities for opening files with system default applications using `open_filex`.
 class FileViewerUtils {
   const FileViewerUtils._();
 
-  /// Returns a [FileReaderView] widget that can render local documents.
+  /// Opens a file with the system's default application.
   ///
-  /// The plugin expects an absolute local path (e.g. a cached download).
-  /// Use [loadingWidget] and [unsupportedWidget] to override the default UI,
-  /// and [onOpen] to observe whether the engine opened the file successfully.
+  /// Returns a [Future<bool>] indicating whether the file was opened successfully.
+  /// This works on all platforms (Android, iOS, macOS, Windows, Linux, etc.)
+  static Future<bool> openFile(String filePath) async {
+    try {
+      final result = await OpenFilex.open(filePath);
+      // OpenResultType: done, fileNotFound, noAppToOpen, permissionDenied, error
+      return result.type == ResultType.done;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Returns a simple widget for backward compatibility.
+  ///
+  /// Note: This now opens files with system default apps instead of in-app preview.
+  /// The widget shown is just a placeholder that opens the file when displayed.
   static Widget viewer({
     required String filePath,
     Function(bool success)? onOpen,
     Widget? loadingWidget,
     Widget? unsupportedWidget,
   }) {
-    return FileReaderView(
-      filePath: filePath,
-      openSuccess: onOpen,
-      loadingWidget: loadingWidget,
-      unSupportFileWidget: unsupportedWidget,
+    return FutureBuilder<bool>(
+      future: openFile(filePath),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return loadingWidget ??
+              const Center(child: CircularProgressIndicator());
+        }
+
+        final success = snapshot.data ?? false;
+
+        // Call the onOpen callback
+        if (onOpen != null) {
+          Future.microtask(() => onOpen(success));
+        }
+
+        if (success) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    size: 48,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '文件已在系统默认应用中打开',
+                    style: TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '文件路径: $filePath',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return unsupportedWidget ??
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '无法打开文件',
+                      style: TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '文件路径: $filePath',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '请确保已安装可以打开此类型文件的应用',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+      },
     );
   }
 
@@ -40,7 +128,10 @@ class FileViewerUtils {
     return DocumentKind.other;
   }
 
-  /// Whether the plugin can generally render files with the given extension.
+  /// Whether the plugin can open files with the given extension.
+  ///
+  /// Note: open_filex can attempt to open any file type, so this returns true
+  /// for common document types. The actual opening depends on installed apps.
   static bool isSupported(String path) {
     final ext = _extension(path);
     if (ext == null) return false;
