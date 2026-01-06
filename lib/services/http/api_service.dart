@@ -100,6 +100,19 @@ class _ApiService {
               return;
             }
 
+            // 服务端返回了通用错误 {code, message}
+            if (data is Map && data['message'] is String) {
+              handler.reject(
+                DioException(
+                  requestOptions: error.requestOptions,
+                  error: data['message'] as String,
+                  response: error.response,
+                  type: error.type,
+                ),
+              );
+              return;
+            }
+
             // 服务端没有返回结构化错误，使用HTTP状态码fallback
             final statusCode = error.response?.statusCode;
             final fallbackMessage = _getStatusCodeMessage(statusCode);

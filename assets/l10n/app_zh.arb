@@ -2,7 +2,7 @@
     "@@locale": "zh",
     "language": "中文简体",
     "app_name": "健康管家",
-    "home": "主页",
+    "home": "指标查询",
     "health_data": "健康数据",
     "setting": "我的"
 }

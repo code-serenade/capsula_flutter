@@ -32,6 +32,7 @@ final class HealthDataViewProvider
   @override
   HealthDataView create() => HealthDataView();
 
+  /// {@macro riverpod.override_with_value}
   Override overrideWithValue(HealthDataViewState value) {
     return $ProviderOverride(
       origin: this,
@@ -40,7 +41,7 @@ final class HealthDataViewProvider
   }
 }
 
-String _$healthDataViewHash() => r'04e6df5c45a560df9b6a740fe1454458c4f393fd';
+String _$healthDataViewHash() => r'4ba8344755aea13b4216cfb6c12025ddf2e01dfc';
 
 abstract class _$HealthDataView extends $Notifier<HealthDataViewState> {
   HealthDataViewState build();

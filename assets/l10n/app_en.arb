@@ -8,9 +8,9 @@
     "@app_name": {
         "description": "The app Name"
     },
-    "home": "Home",
+    "home": "Indicators",
     "@home": {
-        "description": "home page"
+        "description": "indicator query page"
     },
     "health_data": "Health Data",
     "@health_data": {
