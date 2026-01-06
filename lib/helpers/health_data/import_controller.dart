@@ -38,16 +38,14 @@ class HealthDataImportController {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                attachment != null ? '文件已导入到本地沙盒' : '健康数据已保存到本地沙盒',
-              ),
+              content: Text(attachment != null ? '文件已导入到本地沙盒' : '健康数据已保存到本地沙盒'),
             ),
           );
         } catch (error) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('保存失败: $error')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('保存失败: $error')));
           }
           rethrow;
         }

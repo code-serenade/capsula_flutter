@@ -10,6 +10,7 @@ MetricDto _$MetricDtoFromJson(Map<String, dynamic> json) => MetricDto(
   id: (json['id'] as num).toInt(),
   code: json['code'] as String,
   name: json['name'] as String,
+  visualization: json['vazualization'] as String,
   unit: json['unit'] as String?,
 );
 
@@ -17,6 +18,7 @@ Map<String, dynamic> _$MetricDtoToJson(MetricDto instance) => <String, dynamic>{
   'id': instance.id,
   'code': instance.code,
   'name': instance.name,
+  'vazualization': instance.visualization,
   'unit': instance.unit,
 };
 

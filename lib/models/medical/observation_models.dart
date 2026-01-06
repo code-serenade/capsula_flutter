@@ -8,12 +8,16 @@ class MetricDto {
     required this.id,
     required this.code,
     required this.name,
+    required this.visualization,
     this.unit,
   });
 
   final int id;
   final String code;
   final String name;
+
+  @JsonKey(name: 'vazualization')
+  final String visualization;
   final String? unit;
 
   factory MetricDto.fromJson(Map<String, dynamic> json) =>

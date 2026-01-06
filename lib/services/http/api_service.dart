@@ -25,6 +25,7 @@ class _ApiService {
     // 初始化Base服务器（JSON）
     _baseHttpClient = HttpClient.json(baseUrl: baseUrl);
     _addErrorInterceptor(_baseHttpClient.dio);
+    _addCommonResponseInterceptor(_baseHttpClient.dio);
 
     // 初始化Auth服务器（JSON）
     _authHttpClient = HttpClient.json(baseUrl: authUrl);
@@ -39,99 +40,164 @@ class _ApiService {
     _addErrorInterceptor(_uploadClient.dio);
   }
 
+  void _addCommonResponseInterceptor(Dio dio) {
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onResponse: (Response response, ResponseInterceptorHandler handler) {
+          final payload = response.data;
+          if (payload is! Map) {
+            handler.next(response);
+            return;
+          }
+
+          final envelope = Map<String, dynamic>.from(payload);
+          if (!envelope.containsKey('code') ||
+              !envelope.containsKey('message') ||
+              !envelope.containsKey('data')) {
+            handler.next(response);
+            return;
+          }
+
+          final rawCode = envelope['code'];
+          final parsedCode = switch (rawCode) {
+            num value => value.toInt(),
+            String value => int.tryParse(value),
+            _ => null,
+          };
+          if (parsedCode == null) {
+            handler.next(response);
+            return;
+          }
+
+          final message = envelope['message']?.toString();
+          if (parsedCode == 0) {
+            response.data = envelope['data'];
+            handler.next(response);
+            return;
+          }
+
+          handler.reject(
+            DioException(
+              requestOptions: response.requestOptions,
+              response: response,
+              type: DioExceptionType.badResponse,
+              error: message?.trim().isNotEmpty == true ? message : '请求失败',
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String? _tryExtractErrorMessage(dynamic data) {
+    if (data == null) {
+      return null;
+    }
+
+    if (data is String) {
+      final trimmed = data.trim();
+      return trimmed.isEmpty ? null : trimmed;
+    }
+
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final errorObj = map['error'];
+      if (errorObj != null) {
+        final message = _tryExtractErrorMessage(errorObj);
+        if (message != null) {
+          return message;
+        }
+      }
+
+      final messageField = map['message'];
+      if (messageField != null) {
+        final message = messageField.toString().trim();
+        return message.isEmpty ? null : message;
+      }
+    }
+
+    return null;
+  }
+
   // 添加统一错误处理拦截器
   void _addErrorInterceptor(Dio dio) {
     dio.interceptors.add(
       InterceptorsWrapper(
         onError: (DioException error, ErrorInterceptorHandler handler) {
-          // 1. 网络层错误（客户端处理）
-          switch (error.type) {
-            case DioExceptionType.connectionTimeout:
-            case DioExceptionType.sendTimeout:
-            case DioExceptionType.receiveTimeout:
-              handler.reject(
-                DioException(
-                  requestOptions: error.requestOptions,
-                  error: '连接超时，请重试',
-                  type: error.type,
-                ),
-              );
-              return;
+          try {
+            // 1. 网络层错误（客户端处理）
+            switch (error.type) {
+              case DioExceptionType.connectionTimeout:
+              case DioExceptionType.sendTimeout:
+              case DioExceptionType.receiveTimeout:
+                handler.reject(
+                  DioException(
+                    requestOptions: error.requestOptions,
+                    error: '连接超时，请重试',
+                    type: error.type,
+                  ),
+                );
+                return;
 
-            case DioExceptionType.connectionError:
-              handler.reject(
-                DioException(
-                  requestOptions: error.requestOptions,
-                  error: '网络错误，请检查网络连接',
-                  type: error.type,
-                ),
-              );
-              return;
+              case DioExceptionType.connectionError:
+                handler.reject(
+                  DioException(
+                    requestOptions: error.requestOptions,
+                    error: '网络错误，请检查网络连接',
+                    type: error.type,
+                  ),
+                );
+                return;
 
-            case DioExceptionType.badResponse:
-              // 继续处理业务错误
-              break;
+              case DioExceptionType.badResponse:
+                // 继续处理业务错误
+                break;
 
-            default:
-              handler.next(error);
-              return;
+              default:
+                handler.next(error);
+                return;
+            }
+
+            // 2. 业务错误（服务端返回）
+            if (error.response != null) {
+              final data = error.response?.data;
+
+              // 服务端返回了结构化错误 {error: {code, message}}
+              final extractedMessage = _tryExtractErrorMessage(data);
+              if (extractedMessage != null) {
+                handler.reject(
+                  DioException(
+                    requestOptions: error.requestOptions,
+                    error: extractedMessage,
+                    response: error.response,
+                    type: error.type,
+                  ),
+                );
+                return;
+              }
+
+              // 服务端没有返回结构化错误，使用HTTP状态码fallback
+              final statusCode = error.response?.statusCode;
+              final fallbackMessage = _getStatusCodeMessage(statusCode);
+
+              if (fallbackMessage != null) {
+                handler.reject(
+                  DioException(
+                    requestOptions: error.requestOptions,
+                    error: fallbackMessage,
+                    response: error.response,
+                    type: error.type,
+                  ),
+                );
+                return;
+              }
+            }
+
+            // 3. 其他未处理的错误，原样传递
+            handler.next(error);
+          } catch (_) {
+            handler.next(error);
           }
-
-          // 2. 业务错误（服务端返回）
-          if (error.response != null) {
-            final data = error.response?.data;
-
-            // 服务端返回了结构化错误 {error: {code, message}}
-            if (data is Map && data.containsKey('error')) {
-              final errorObj = data['error'];
-              String message = errorObj['message'] ?? '未知错误';
-
-              // TODO: 可选 - 根据error code进行国际化翻译
-              // message = _translateError(errorObj['code'], message);
-
-              handler.reject(
-                DioException(
-                  requestOptions: error.requestOptions,
-                  error: message,
-                  response: error.response,
-                  type: error.type,
-                ),
-              );
-              return;
-            }
-
-            // 服务端返回了通用错误 {code, message}
-            if (data is Map && data['message'] is String) {
-              handler.reject(
-                DioException(
-                  requestOptions: error.requestOptions,
-                  error: data['message'] as String,
-                  response: error.response,
-                  type: error.type,
-                ),
-              );
-              return;
-            }
-
-            // 服务端没有返回结构化错误，使用HTTP状态码fallback
-            final statusCode = error.response?.statusCode;
-            final fallbackMessage = _getStatusCodeMessage(statusCode);
-
-            if (fallbackMessage != null) {
-              handler.reject(
-                DioException(
-                  requestOptions: error.requestOptions,
-                  error: fallbackMessage,
-                  response: error.response,
-                  type: error.type,
-                ),
-              );
-              return;
-            }
-          }
-
-          // 3. 其他未处理的错误，原样传递
-          handler.next(error);
         },
       ),
     );

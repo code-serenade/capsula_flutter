@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -6,6 +7,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:capsula_flutter/gen/app_localizations.dart';
 import 'package:capsula_flutter/models/medical/observation_models.dart';
 import 'package:capsula_flutter/providers/indicator_query/indicator_query_provider.dart';
+import 'package:capsula_flutter/services/chart/chart.dart';
+import 'package:capsula_flutter/widgets/charts/charts.dart';
 import 'package:capsula_flutter/widgets/health_data/page_header.dart';
 
 @RoutePage()
@@ -22,6 +25,26 @@ class HomePage extends HookConsumerWidget {
 
     final formNotifier = ref.read(indicatorQueryFormProvider.notifier);
     final appliedNotifier = ref.read(indicatorQueryAppliedProvider.notifier);
+
+    ref.listen<AsyncValue<QueryObservationResponse?>>(
+      indicatorQueryResultsProvider,
+      (previous, next) {
+        final hadError = previous?.hasError ?? false;
+        final hasError = next.hasError;
+        if (!hasError || hadError) {
+          return;
+        }
+
+        final message = _formatRequestError(next.error!);
+        if (!context.mounted) {
+          return;
+        }
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
 
     final subjectController = useTextEditingController(
       text: formState.subjectId,
@@ -142,6 +165,7 @@ class HomePage extends HookConsumerWidget {
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           results.when(
+            skipLoadingOnReload: results.hasError,
             data: (data) {
               if (appliedRequest == null) {
                 return const SliverToBoxAdapter(
@@ -178,7 +202,10 @@ class HomePage extends HookConsumerWidget {
                     const SizedBox(height: 12),
                     const Text('请求失败'),
                     const SizedBox(height: 8),
-                    Text('$error', textAlign: TextAlign.center),
+                    Text(
+                      _formatRequestError(error),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 12),
                     FilledButton(
                       onPressed: () => ref
@@ -196,6 +223,26 @@ class HomePage extends HookConsumerWidget {
       ),
     );
   }
+}
+
+String _formatRequestError(Object error) {
+  if (error is DioException) {
+    final message = error.error?.toString();
+    if (message != null && message.trim().isNotEmpty) {
+      return message;
+    }
+    if (error.message != null && error.message!.trim().isNotEmpty) {
+      return error.message!;
+    }
+  }
+
+  final text = error.toString();
+  const exceptionPrefix = 'Exception: ';
+  if (text.startsWith(exceptionPrefix)) {
+    return text.substring(exceptionPrefix.length);
+  }
+
+  return text;
 }
 
 class _IndicatorQueryFormCard extends StatelessWidget {
@@ -412,6 +459,11 @@ class _ObservationResultSlivers extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final metric = response.metric;
+    final visualization = MetricVisualizationParsing.fromApiValue(
+      metric.visualization,
+    );
+    final showsChart = visualization.usesChart;
+    final showsSingleValue = visualization == MetricVisualization.singleValue;
 
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -441,6 +493,9 @@ class _ObservationResultSlivers extends StatelessWidget {
                           ),
                           _SummaryChip(label: 'metric_id: ${metric.id}'),
                           _SummaryChip(label: 'code: ${metric.code}'),
+                          _SummaryChip(
+                            label: 'vazualization: ${metric.visualization}',
+                          ),
                           if (metric.unit != null &&
                               metric.unit!.trim().isNotEmpty)
                             _SummaryChip(label: 'unit: ${metric.unit}'),
@@ -459,11 +514,34 @@ class _ObservationResultSlivers extends StatelessWidget {
               );
             }
 
-            final pointIndex = index - 1;
+            if (showsSingleValue) {
+              if (index == 1) {
+                final point = response.points.last;
+                return _ObservationPointCard(point: point, unit: metric.unit);
+              }
+
+              return const SizedBox.shrink();
+            }
+
+            final pointOffset = showsChart ? 2 : 1;
+            if (showsChart && index == 1) {
+              return ObservationMetricChart(
+                metric: metric,
+                points: response.points,
+              );
+            }
+
+            final pointIndex = index - pointOffset;
             final point = response.points[pointIndex];
             return _ObservationPointCard(point: point, unit: metric.unit);
           },
-          childCount: response.points.isEmpty ? 2 : response.points.length + 1,
+          childCount: response.points.isEmpty
+              ? 2
+              : showsSingleValue
+              ? 2
+              : showsChart
+              ? response.points.length + 2
+              : response.points.length + 1,
         ),
       ),
     );
