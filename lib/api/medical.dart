@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:capsula_flutter/models/medical/observation_models.dart';
+import 'package:capsula_flutter/models/medical/metric_models.dart';
 import 'package:capsula_flutter/services/http/api_service.dart';
 
 Future<QueryObservationResponse> queryObservations({
@@ -30,4 +31,22 @@ Future<QueryObservationResponse> queryObservations({
   }
 
   return QueryObservationResponse.fromJson(Map<String, dynamic>.from(body));
+}
+
+Future<ListSelectableMetricsResponse> listSelectableMetrics() async {
+  final response = await httpClient
+      .get('/medical/metrics/selectable')
+      .timeout(
+        const Duration(seconds: 12),
+        onTimeout: () => throw Exception('连接超时，请重试'),
+      );
+
+  final body = response.data;
+  if (body is! Map) {
+    throw const FormatException('Invalid response payload');
+  }
+
+  return ListSelectableMetricsResponse.fromJson(
+    Map<String, dynamic>.from(body),
+  );
 }

@@ -9,6 +9,47 @@ part of 'indicator_query_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(selectableMetrics)
+const selectableMetricsProvider = SelectableMetricsProvider._();
+
+final class SelectableMetricsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<SelectableMetricDto>>,
+          List<SelectableMetricDto>,
+          FutureOr<List<SelectableMetricDto>>
+        >
+    with
+        $FutureModifier<List<SelectableMetricDto>>,
+        $FutureProvider<List<SelectableMetricDto>> {
+  const SelectableMetricsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'selectableMetricsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$selectableMetricsHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<SelectableMetricDto>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<SelectableMetricDto>> create(Ref ref) {
+    return selectableMetrics(ref);
+  }
+}
+
+String _$selectableMetricsHash() => r'94325365bd04457dd93d07f7ab0aeb4767e77ad4';
+
 @ProviderFor(IndicatorQueryForm)
 const indicatorQueryFormProvider = IndicatorQueryFormProvider._();
 

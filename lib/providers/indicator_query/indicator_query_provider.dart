@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:capsula_flutter/api/medical.dart';
+import 'package:capsula_flutter/models/medical/metric_models.dart';
 import 'package:capsula_flutter/models/medical/observation_models.dart';
 
 part 'indicator_query_provider.g.dart';
+
+@riverpod
+Future<List<SelectableMetricDto>> selectableMetrics(Ref ref) async {
+  final response = await listSelectableMetrics();
+  return response.metrics;
+}
 
 @immutable
 class IndicatorQueryFormState {

@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import 'package:capsula_flutter/gen/app_localizations.dart';
+import 'package:capsula_flutter/models/medical/metric_models.dart';
 import 'package:capsula_flutter/models/medical/observation_models.dart';
 import 'package:capsula_flutter/providers/indicator_query/indicator_query_provider.dart';
 import 'package:capsula_flutter/services/chart/chart.dart';
@@ -22,6 +23,7 @@ class HomePage extends HookConsumerWidget {
     final formState = ref.watch(indicatorQueryFormProvider);
     final appliedRequest = ref.watch(indicatorQueryAppliedProvider);
     final results = ref.watch(indicatorQueryResultsProvider);
+    final selectableMetrics = ref.watch(selectableMetricsProvider);
 
     final formNotifier = ref.read(indicatorQueryFormProvider.notifier);
     final appliedNotifier = ref.read(indicatorQueryAppliedProvider.notifier);
@@ -49,7 +51,6 @@ class HomePage extends HookConsumerWidget {
     final subjectController = useTextEditingController(
       text: formState.subjectId,
     );
-    final metricController = useTextEditingController(text: formState.metricId);
 
     useEffect(() {
       if (subjectController.text != formState.subjectId) {
@@ -60,16 +61,6 @@ class HomePage extends HookConsumerWidget {
       }
       return null;
     }, [formState.subjectId]);
-
-    useEffect(() {
-      if (metricController.text != formState.metricId) {
-        metricController.text = formState.metricId;
-        metricController.selection = TextSelection.collapsed(
-          offset: metricController.text.length,
-        );
-      }
-      return null;
-    }, [formState.metricId]);
 
     final subjectId = int.tryParse(formState.subjectId.trim());
     final metricId = int.tryParse(formState.metricId.trim());
@@ -128,10 +119,12 @@ class HomePage extends HookConsumerWidget {
               child: _IndicatorQueryFormCard(
                 state: formState,
                 subjectController: subjectController,
-                metricController: metricController,
+                selectableMetrics: selectableMetrics,
                 canSubmit: canSubmit,
                 onSubjectChanged: formNotifier.setSubjectId,
                 onMetricChanged: formNotifier.setMetricId,
+                onReloadMetrics: () =>
+                    ref.invalidate(selectableMetricsProvider),
                 onPickDateRange: () async {
                   final now = DateTime.now();
                   final initialRange =
@@ -249,10 +242,11 @@ class _IndicatorQueryFormCard extends StatelessWidget {
   const _IndicatorQueryFormCard({
     required this.state,
     required this.subjectController,
-    required this.metricController,
+    required this.selectableMetrics,
     required this.canSubmit,
     required this.onSubjectChanged,
     required this.onMetricChanged,
+    required this.onReloadMetrics,
     required this.onPickDateRange,
     required this.onClearDateRange,
     required this.onSubmit,
@@ -261,11 +255,12 @@ class _IndicatorQueryFormCard extends StatelessWidget {
 
   final IndicatorQueryFormState state;
   final TextEditingController subjectController;
-  final TextEditingController metricController;
+  final AsyncValue<List<SelectableMetricDto>> selectableMetrics;
   final bool canSubmit;
 
   final ValueChanged<String> onSubjectChanged;
   final ValueChanged<String> onMetricChanged;
+  final VoidCallback onReloadMetrics;
   final Future<void> Function() onPickDateRange;
   final VoidCallback onClearDateRange;
   final VoidCallback onSubmit;
@@ -305,16 +300,91 @@ class _IndicatorQueryFormCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: TextField(
-                    controller: metricController,
-                    onChanged: onMetricChanged,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.search,
-                    decoration: const InputDecoration(
-                      labelText: 'metric_id',
-                      hintText: 'e.g. 1',
+                  child: selectableMetrics.when(
+                    data: (metrics) {
+                      final currentId = int.tryParse(state.metricId.trim());
+                      final hasCurrent =
+                          currentId != null &&
+                          metrics.any((metric) => metric.id == currentId);
+                      final value = hasCurrent ? currentId : null;
+
+                      if (metrics.isEmpty) {
+                        return DropdownButtonFormField<int>(
+                          items: const [],
+                          onChanged: null,
+                          decoration: const InputDecoration(
+                            labelText: 'metric_id',
+                            hintText: '暂无可选指标',
+                          ),
+                        );
+                      }
+
+                      return DropdownButtonFormField<int>(
+                        value: value,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'metric_id',
+                        ),
+                        hint: const Text('请选择指标'),
+                        items: metrics
+                            .map(
+                              (metric) => DropdownMenuItem<int>(
+                                value: metric.id,
+                                child: Text(
+                                  metric.unit == null ||
+                                          metric.unit!.trim().isEmpty
+                                      ? metric.name
+                                      : '${metric.name} (${metric.unit})',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (selected) {
+                          onMetricChanged(selected?.toString() ?? '');
+                        },
+                      );
+                    },
+                    loading: () => DropdownButtonFormField<int>(
+                      items: const [],
+                      onChanged: null,
+                      decoration: const InputDecoration(
+                        labelText: 'metric_id',
+                        hintText: '加载中...',
+                      ),
                     ),
-                    onSubmitted: (_) => onSubmit(),
+                    error: (error, _) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<int>(
+                          items: const [],
+                          onChanged: null,
+                          decoration: const InputDecoration(
+                            labelText: 'metric_id',
+                            hintText: '加载失败',
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _formatRequestError(error),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.error,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: onReloadMetrics,
+                              child: const Text('重试'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
