@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:capsula_flutter/models/medical/observation_models.dart';
 import 'package:capsula_flutter/models/medical/metric_models.dart';
+import 'package:capsula_flutter/models/medical/markdown_models.dart';
 import 'package:capsula_flutter/services/http/api_service.dart';
 
 Future<QueryObservationResponse> queryObservations({
@@ -49,4 +50,51 @@ Future<ListSelectableMetricsResponse> listSelectableMetrics() async {
   return ListSelectableMetricsResponse.fromJson(
     Map<String, dynamic>.from(body),
   );
+}
+
+Future<UploadMarkdownTaskResponse> uploadMarkdownDataSource({
+  required int subjectId,
+  required String sourceType,
+  required String sourceName,
+  required String fileContent,
+}) async {
+  final response = await httpClient
+      .post(
+        '/medical/data-source/markdown',
+        data: {
+          'subject_id': subjectId,
+          'source_type': sourceType,
+          'source_name': sourceName,
+          'file_content': fileContent,
+        },
+      )
+      .timeout(
+        const Duration(seconds: 12),
+        onTimeout: () => throw Exception('连接超时，请重试'),
+      );
+
+  final body = response.data;
+  if (body is! Map) {
+    throw const FormatException('Invalid response payload');
+  }
+
+  return UploadMarkdownTaskResponse.fromJson(Map<String, dynamic>.from(body));
+}
+
+Future<MarkdownTaskStatusResponse> getMarkdownTaskStatus({
+  required String taskId,
+}) async {
+  final response = await httpClient
+      .get('/medical/data-source/markdown/tasks/$taskId')
+      .timeout(
+        const Duration(seconds: 12),
+        onTimeout: () => throw Exception('连接超时，请重试'),
+      );
+
+  final body = response.data;
+  if (body is! Map) {
+    throw const FormatException('Invalid response payload');
+  }
+
+  return MarkdownTaskStatusResponse.fromJson(Map<String, dynamic>.from(body));
 }
