@@ -8,17 +8,19 @@ part of 'observation_models.dart';
 
 MetricDto _$MetricDtoFromJson(Map<String, dynamic> json) => MetricDto(
   id: (json['id'] as num).toInt(),
-  code: json['code'] as String,
-  name: json['name'] as String,
-  visualization: json['vazualization'] as String,
+  code: json['metric_code'] as String,
+  name: json['metric_name'] as String,
+  visualization: json['visualization'] as String,
+  valueType: json['value_type'] as String?,
   unit: json['unit'] as String?,
 );
 
 Map<String, dynamic> _$MetricDtoToJson(MetricDto instance) => <String, dynamic>{
   'id': instance.id,
-  'code': instance.code,
-  'name': instance.name,
-  'vazualization': instance.visualization,
+  'metric_code': instance.code,
+  'metric_name': instance.name,
+  'visualization': instance.visualization,
+  'value_type': instance.valueType,
   'unit': instance.unit,
 };
 
