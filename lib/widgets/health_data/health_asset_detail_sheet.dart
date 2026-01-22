@@ -50,92 +50,96 @@ class _HealthAssetDetailSheetState extends State<HealthAssetDetailSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final markdownPath = _resolveMarkdownPath(widget.asset);
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.asset.filename,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.asset.filename,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              HealthAssetDetailRow(
+                label: '来源',
+                value: widget.asset.dataSource.displayName,
+              ),
+              HealthAssetDetailRow(
+                label: '类型',
+                value: widget.asset.dataType.displayName,
+              ),
+              HealthAssetDetailRow(
+                label: '更新时间',
+                value: _formatDateTime(widget.asset.updatedAt),
+              ),
+              HealthAssetDetailRow(label: '文件路径', value: widget.asset.path),
+              if (widget.asset.tags.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  children: widget.asset.tags
+                      .map(
+                        (tag) => Chip(
+                          label: Text(tag),
+                          backgroundColor: theme.colorScheme.primaryContainer
+                              .withValues(alpha: 0.4),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+              if (widget.asset.note?.isNotEmpty == true) ...[
+                const SizedBox(height: 12),
+                Text(widget.asset.note!, style: theme.textTheme.bodyMedium),
+              ],
+              const SizedBox(height: 16),
+              if (markdownPath != null)
+                OutlinedButton.icon(
+                  onPressed: () => _openMarkdown(context, markdownPath),
+                  icon: const Icon(Iconsax.document_text),
+                  label: const Text('打开Markdown'),
+                ),
+              if (markdownPath != null) const SizedBox(height: 8),
+              if (markdownPath != null)
+                FilledButton.icon(
+                  onPressed: () =>
+                      _uploadMarkdown(context, widget.asset, markdownPath),
+                  icon: const Icon(Iconsax.document_upload),
+                  label: const Text('上传Markdown'),
+                ),
+              if (markdownPath != null) const SizedBox(height: 8),
+              if (markdownPath != null)
+                OutlinedButton.icon(
+                  onPressed: () => _promptTaskStatus(context),
+                  icon: const Icon(Iconsax.search_normal),
+                  label: const Text('查询任务'),
+                ),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  widget.onPreview();
+                },
+                icon: const Icon(Iconsax.eye),
+                label: const Text('打开文件'),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => _confirmDelete(context),
+                icon: Icon(Iconsax.trash, color: theme.colorScheme.error),
+                label: Text(
+                  '删除文件',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          HealthAssetDetailRow(
-            label: '来源',
-            value: widget.asset.dataSource.displayName,
-          ),
-          HealthAssetDetailRow(
-            label: '类型',
-            value: widget.asset.dataType.displayName,
-          ),
-          HealthAssetDetailRow(
-            label: '更新时间',
-            value: _formatDateTime(widget.asset.updatedAt),
-          ),
-          HealthAssetDetailRow(label: '文件路径', value: widget.asset.path),
-          if (widget.asset.tags.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              children: widget.asset.tags
-                  .map(
-                    (tag) => Chip(
-                      label: Text(tag),
-                      backgroundColor: theme.colorScheme.primaryContainer
-                          .withValues(alpha: 0.4),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-          if (widget.asset.note?.isNotEmpty == true) ...[
-            const SizedBox(height: 12),
-            Text(widget.asset.note!, style: theme.textTheme.bodyMedium),
-          ],
-          const SizedBox(height: 16),
-          if (markdownPath != null)
-            OutlinedButton.icon(
-              onPressed: () => _openMarkdown(context, markdownPath),
-              icon: const Icon(Iconsax.document_text),
-              label: const Text('打开Markdown'),
-            ),
-          if (markdownPath != null) const SizedBox(height: 8),
-          if (markdownPath != null)
-            FilledButton.icon(
-              onPressed: () =>
-                  _uploadMarkdown(context, widget.asset, markdownPath),
-              icon: const Icon(Iconsax.document_upload),
-              label: const Text('上传Markdown'),
-            ),
-          if (markdownPath != null) const SizedBox(height: 8),
-          if (markdownPath != null)
-            OutlinedButton.icon(
-              onPressed: () => _promptTaskStatus(context),
-              icon: const Icon(Iconsax.search_normal),
-              label: const Text('查询任务'),
-            ),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onPreview();
-            },
-            icon: const Icon(Iconsax.eye),
-            label: const Text('打开文件'),
-          ),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: () => _confirmDelete(context),
-            icon: Icon(Iconsax.trash, color: theme.colorScheme.error),
-            label: Text(
-              '删除文件',
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -359,7 +363,7 @@ class _HealthAssetDetailSheetState extends State<HealthAssetDetailSheet> {
     if (!context.mounted) return;
     Navigator.of(context).pop();
     try {
-      await onDelete();
+      await widget.onDelete();
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
