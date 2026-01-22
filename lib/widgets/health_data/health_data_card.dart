@@ -106,17 +106,21 @@ class HealthDataCard extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Icon(
           _getIconForSource(record.source),
           size: 14,
           color: theme.colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: 4),
-        Text(
-          record.notes ?? record.sourceDisplayName,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        Expanded(
+          child: Text(
+            record.notes ?? record.sourceDisplayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],

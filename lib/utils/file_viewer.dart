@@ -148,7 +148,7 @@ class FileViewerUtils {
   static const Set<String> _wordExtensions = {'doc', 'docx'};
   static const Set<String> _excelExtensions = {'xls', 'xlsx', 'xlsm'};
   static const Set<String> _pptExtensions = {'ppt', 'pptx'};
-  static const Set<String> _textExtensions = {'txt', 'rtf'};
+  static const Set<String> _textExtensions = {'txt', 'rtf', 'md'};
   static const Set<String> _imageExtensions = {
     'png',
     'jpg',

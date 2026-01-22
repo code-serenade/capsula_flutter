@@ -5,7 +5,9 @@ import 'package:capsula_flutter/models/health_data_model.dart';
 import 'package:capsula_flutter/services/db/app_database.dart';
 import 'package:capsula_flutter/services/db/tables/health_asset/health_asset_table.dart';
 import 'package:capsula_flutter/services/storage/sandbox_service.dart';
+import 'package:capsula_flutter/ffi/file_ingest_ios.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 class HealthAssetRepository {
@@ -112,8 +114,14 @@ class HealthAssetRepository {
       source: source,
       relativeDirectory: relativeDir,
     );
+    final mime = _inferMime(source.path);
     final stats = await _statFile(copied);
     final relativePath = p.relative(copied.path, from: service.paths.root);
+    final markdownRelativePath = await _convertToMarkdownIfSupported(
+      file: copied,
+      mime: mime,
+      service: service,
+    );
     final now = DateTime.now();
     final trimmedDisplayName = displayName?.trim();
     final asset = HealthAsset(
@@ -121,7 +129,7 @@ class HealthAssetRepository {
           ? trimmedDisplayName!
           : p.basename(source.path),
       path: relativePath,
-      mime: _inferMime(source.path),
+      mime: mime,
       sizeBytes: stats.size,
       hashSha256: stats.sha256,
       dataSource: dataSource,
@@ -133,6 +141,7 @@ class HealthAssetRepository {
         'path': relativePath,
         'originalPath': source.path,
         'copiedAt': now.toIso8601String(),
+        if (markdownRelativePath != null) 'markdownPath': markdownRelativePath,
       },
       createdAt: now,
       updatedAt: now,
@@ -146,6 +155,41 @@ class HealthAssetRepository {
   Future<void> deleteAsset(int id) async {
     final dao = await _requireDao();
     await dao.deleteAsset(id);
+  }
+
+  Future<void> deleteAssetWithFiles(HealthAsset asset) async {
+    final service = _sandboxService;
+    if (!service.isInitialized) {
+      await service.initialize();
+    }
+
+    final markdownPath = asset.metadata?['markdownPath'];
+    final paths = <String>[
+      asset.path,
+      if (markdownPath is String && markdownPath.trim().isNotEmpty) markdownPath,
+    ];
+
+    final failures = <String>[];
+    for (final relativePath in paths) {
+      try {
+        final file = service.fileFor(relativePath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (_) {
+        failures.add(relativePath);
+      }
+    }
+
+    if (failures.isNotEmpty) {
+      throw Exception('删除文件失败: ${failures.join(", ")}');
+    }
+
+    final id = asset.id;
+    if (id != null) {
+      final dao = await _requireDao();
+      await dao.deleteAsset(id);
+    }
   }
 
   String _sanitizeFileName(String value) {
@@ -223,6 +267,39 @@ class HealthAssetRepository {
         return 'text/plain';
       default:
         return 'application/octet-stream';
+    }
+  }
+
+  Future<String?> _convertToMarkdownIfSupported({
+    required File file,
+    required String mime,
+    required SandboxService service,
+  }) async {
+    if (!Platform.isIOS) {
+      return null;
+    }
+    if (mime != 'application/pdf') {
+      return null;
+    }
+
+    final outputDir = Directory(p.join(service.paths.doc, 'md'));
+    if (!await outputDir.exists()) {
+      await outputDir.create(recursive: true);
+    }
+
+    try {
+      final outputPath = FileIngestIos.instance().convertToMarkdown(
+        fileType: 'pdf',
+        inputPath: file.path,
+        outputDir: outputDir.path,
+      );
+      if (outputPath.isEmpty) {
+        return null;
+      }
+      return p.relative(outputPath, from: service.paths.root);
+    } catch (error) {
+      debugPrint('Markdown conversion failed: $error');
+      return null;
     }
   }
 

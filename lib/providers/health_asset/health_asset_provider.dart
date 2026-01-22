@@ -72,4 +72,13 @@ class HealthAssets extends _$HealthAssets {
       (value) => value.where((asset) => asset.id != id).toList(),
     );
   }
+
+  Future<void> deleteAssetWithFiles(HealthAsset asset) async {
+    final repo = ref.read(healthAssetRepositoryProvider);
+    await repo.deleteAssetWithFiles(asset);
+    final assetId = asset.id;
+    state = state.whenData(
+      (value) => value.where((item) => item.id != assetId).toList(),
+    );
+  }
 }
